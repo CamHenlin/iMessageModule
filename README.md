@@ -7,9 +7,9 @@ This is a node module that allows you to send iMessages, assuming you are runnin
 
 Like this:
 ```
-var imessage = require("index.js");
+var imessagemodule = require("iMessageModule");
 
-imessage.sendMessage("person's icloud email, phone number, or group chat title", "message text", function(err) {});
+imessagemodule.sendMessage("person's icloud email, phone number, or group chat title", "message text", function(err) {});
 
 ```
 

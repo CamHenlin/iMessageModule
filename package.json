@@ -1,5 +1,5 @@
 {
-  "name": "imessage",
+  "name": "iMessageModule",
   "version": "0.0.1",
   "description": "A module to easily send out iMessages on Macs",
   "main": "index.js",
@@ -11,7 +11,7 @@
     "url": "https://github.com/CamHenlin/iMessageModule"
   },
   "keywords": [
-    "imessage"
+    "imessage, osx, applescript"
   ],
   "author": "Cameron Henlin <cam.henlin@gmail.com> (https://github.com/CamHenlin/)",
   "license": "ISC",
