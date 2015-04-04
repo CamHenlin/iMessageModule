@@ -1,70 +1,74 @@
-// normal module includes
+// local includes
 var applescript = require("./applescript/lib/applescript.js");
+var Queue = require("./queue.js").Queue;
 
 // nodobjc required includes for private frameworks
-var objc = require('NodObjC');
 var $ = require('NodObjC');
 $.import('MessagesKit');
+var messageHelper = $.SOMessageHelper('alloc')('init');
 var buddyHelper = $.SOBuddyHelper('alloc')('init');
 
 // sending queue, since we can only send one message at a time
 var sendingQueue = [];
 
-var Message = function(chatTitle, chatMessage, isGroupChat) {
+// isSending is set true when a message is actively being sent by applescript
+var isSending = false;
+
+// instantiate a queue to store messages in
+var messageQueue = new Queue();
+
+// basic message model
+var Message = function(chatTitle, chatMessage, callback) {
 	this.chatTitle = chatTitle;
 	this.chatMessage = chatMessage;
-	this.isGroupChat = isGroupChat;
+	this.messageCallback = callback;
 };
 
-// main module export
-exports.sendMessage = function(chatTitle, chatMessage, isGroupChat) {
-	sendingQueue.push(new Message(chatTitle, chatMessage, isGroupChat));
-	sendMessagesFromQueue();
-};
-
+/**
+ * [sendMessagesFromQueue checks queue for more messages, attempts to send them if it is not already sending]
+ * @return {[type]} [void]
+ */
 function sendMessagesFromQueue() {
-	if (queue.length > 0) {
-		// select the first messages that we need to send
-		var message = sendingQueue[0];
+	if (!messageQueue.hasNext() || isSending) {
+		return;
+	}
+	isSending = true;
 
-		// remove the first message from the queue
-		sendingQueue = sendingQueue.slice(1, sendingQueue.length);
+	// select the first messages that we need to send
+	var message = messageQueue.dequeue();
 
-		var chatTitle = message.chatTitle;
-		var chatMessage = message.chatMessage;
-		var isGroupChat = message.isGroupChat;
+	// remove the first message from the queue
+	sendingQueue = sendingQueue.slice(1, sendingQueue.length);
 
+	var chatTitle = message.chatTitle;
+	var chatMessage = message.chatMessage;
+	var messageCallback = message.messageCallback;
 
-		var remainingTitleText = "";	// this will hold the text after the first space, if any
-										// required because the private messages frameworks can't handle spaces for some reason
+	var remainingTitleText = "";	// this will hold the text after the first space, if any
+									// required because the private messages frameworks can't handle spaces for some reason
 
-		// determine if there is a space in the chatTitle:
-		var spaceOffset = chatTitle.indexOf(' ');
-		if (spaceOffset > -1) {
-			// remaining text is everything after the first space, including the space
-			remainingTitleText = chatTitle.slice(spaceOffset, chatTitle.length);
+	// use applescript to set the second portion of the chat title, if any
+	if (chatTitle.indexOf(' ') > -1) {
+		// typo is intentional in my code. error is in apple's headers
+		messageHelper("startNewConverstaionInMessages");
 
-			// chat title is anything before the first space
-			chatTitle = chatTitle.slice(0, spaceOffset);
-		}
-
+		setGroupChatTitle(chatTitle, function() { sendMessage(chatMessage, messageCallback) }.bind(this));
+	} else {
 		// create a new chat, at least with the first portion of the chat title
 		buddyHelper("openConversationWithBuddyID", $(chatTitle), "serviceName", $("iMessage"));
 
-		// use applescript to set the second portion of the chat title, if any
-		if (remainingTitleText !== "") {
-
-		}
+		sendMessage(chatMessage, messageCallback);
 	}
 }
 
 /**
- * [setPartialChatTitle sets a portion of the chat title.
- * 						used if a title with a space was passed in to the sendMessage function]
- * @param {[type]} partialChatTitle [the partial chat title to set]
+ * [setGroupChatTitle 	sets the title To: line of a group chat. This has to be set differently because groupchat titles can have any UTF8 char
+ * 						which for some reason gets mangled using the private interfaces and I haven't figured out how to get around that yet]
+ * @param {[type]} groupChatTitle [the partial chat title to set]
+ * @param  {Function} callback      [callback to execute when done setting title]
  */
-function setPartialChatTitle(partialChatTitle, callback) {
-	applescript.execFile(__dirname+'/setpartialchattitle.AppleScript', [], function(err, result) {
+function setGroupChatTitle(groupChatTitle, callback) {
+	applescript.execFile(__dirname+'/setgroupchattitle.AppleScript', [groupChatTitle], function(err, result) {
 		if (err) {
 			assistiveAccessCheck();
 		}
@@ -73,44 +77,43 @@ function setPartialChatTitle(partialChatTitle, callback) {
 	});
 }
 
-// make sure assistive access is set up
-function assistiveAccessCheck() {
-	// first check if assistive access is turned on
-	applescript.execFile(__dirname+'/assistive.AppleScript', [true], function(err, result) {
+/**
+ * [sendMessage initiates the applescript to send the imessages]
+ * @param  {[type]} chatMessage [message text to send]
+ * @return {[type]}             [void]
+ */
+function sendMessage(chatMessage, messageCallback) {
+	applescript.execFile(__dirname+'/sendmessage.AppleScript', [chatMessage], function(err, result) {
+		isSending = false;
+
 		if (err) {
-			try {
-				outputBox.setItems(["This program requires OS X Assistive Access, which is currently disabled.", "Opening Assistive Access now... (You may be asked to enter your password.)", "note: to run locally, enable access to Terminal or iTerm2, to run over SSH, enable access to sshd_keygen_wrapper."]);
-				screen.render();
-				applescript.execFile(__dirname+'/assistive.AppleScript', [false], function(err, result) {});
-			} catch (error) {
-				// I believe this might happen with old versions of OS X
-				console.log('if you are seeing this text, please file an issue at https://github.com/CamHenlin/imessageclient/issues including your OS X version number and any problems you are encountering.')
-			}
+			assistiveAccessCheck();
 		}
-	});
+
+		// pass the applescript error through to the user and let them try to deal with it
+		messageCallback(err);
+
+		// send more messages, if any
+		sendMessagesFromQueue();
+	}.bind(this));
 }
 
-function sendMessage(chatMessage) {
+/**
+ * [sendMessage main module export]
+ * @param  {[type]}   chatTitle   [phone number, email address, title of group chat]
+ * @param  {[type]}   chatMessage [message to send]
+ * @param  {Function} callback    [callback to execute when done sending]
+ * @return {[type]}               [void]
+ */
+exports.sendMessage = function(chatTitle, chatMessage, callback) {
+	// add new message to the messagequeue
+	messageQueue.enqueue(new Message(chatTitle, chatMessage, callback));
+	// attempt to send messages
+	sendMessagesFromQueue();
+};
 
-}
 
 
-	if (GROUPCHAT_SELECTED) {
-		applescript.execFile(__dirname+'/sendmessage.AppleScript', [[SELECTED_GROUP.split('-chat')[0]], message, FULL_KEYBOARD_ACCESS], function(err, result) {
-			if (err) {
-				assistiveAccessCheck();
-			}
 
-			screen.render();
-			sending = false;
-		}.bind(this));
-	} else {
-		applescript.execFile(__dirname+'/sendmessage_single.AppleScript', [[to], message, FULL_KEYBOARD_ACCESS, ENABLE_OTHER_SERVICES], function(err, result) {
-			if (err) {
-				assistiveAccessCheck();
-			}
 
-			screen.render();
-			sending = false;
-		}.bind(this));
-	}
+

@@ -1,1 +1,0 @@
-global.__proto__ = module.exports = require('./');

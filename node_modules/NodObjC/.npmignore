@@ -1,5 +1,0 @@
-node_modules
-npm-debug.log
-test/*.log
-test/old
-.DS_Store
