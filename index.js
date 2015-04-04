@@ -99,6 +99,24 @@ function sendMessage(chatMessage, messageCallback) {
 }
 
 /**
+ * [assistiveAccessCheck make sure assistive access is set up]
+ * @return {[type]} [void]
+ */
+function assistiveAccessCheck() {
+	// first check if assistive access is turned on
+	applescript.execFile(__dirname+'/assistive.AppleScript', [true], function(err, result) {
+		if (err) {
+			try {
+				applescript.execFile(__dirname+'/assistive.AppleScript', [false], function(err, result) {});
+			} catch (error) {
+				// I believe this might happen with old versions of OS X
+				console.log('if you are seeing this text, please file an issue at https://github.com/CamHenlin/iMessageModule/issues including your OS X version number and any problems you are encountering.')
+			}
+		}
+	});
+};
+
+/**
  * [sendMessage main module export]
  * @param  {[type]}   chatTitle   [phone number, email address, title of group chat]
  * @param  {[type]}   chatMessage [message to send]
@@ -111,8 +129,6 @@ exports.sendMessage = function(chatTitle, chatMessage, callback) {
 	// attempt to send messages
 	sendMessagesFromQueue();
 };
-
-
 
 
 
