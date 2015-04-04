@@ -1,6 +1,6 @@
 {
   "name": "iMessageModule",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A module to easily send out iMessages on Macs",
   "main": "index.js",
   "scripts": {
