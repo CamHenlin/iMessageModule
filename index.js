@@ -22,6 +22,10 @@ var Message = function(chatTitle, chatMessage, callback) {
 	this.chatTitle = chatTitle;
 	this.chatMessage = chatMessage;
 	this.messageCallback = callback;
+
+	if (!callback) {
+		this.messageCallback = function() {};
+	}
 };
 
 /**
