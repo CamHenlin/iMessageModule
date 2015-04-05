@@ -10,7 +10,6 @@ Like this:
 var imessagemodule = require("iMessageModule");
 
 imessagemodule.sendMessage("recipient email, phone, or chat title", "message text", function(err) {});
-
 ```
 
 It's really that simple!
