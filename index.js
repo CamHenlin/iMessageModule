@@ -29,6 +29,61 @@ var Message = function(chatTitle, chatMessage, callback) {
 };
 
 /**
+ * [assistiveAccessCheck make sure assistive access is set up]
+ * @return {[type]} [void]
+ */
+function assistiveAccessCheck() {
+	// first check if assistive access is turned on
+	applescript.execFile(__dirname+'/assistive.AppleScript', [true], function(err) {
+		if (err) {
+			try {
+				applescript.execFile(__dirname+'/assistive.AppleScript', [false], function() {});
+			} catch (error) {
+				// I believe this might happen with old versions of OS X
+				console.log('if you are seeing this text, please file an issue at https://github.com/CamHenlin/iMessageModule/issues including your OS X version number and any problems you are encountering.');
+			}
+		}
+	});
+}
+
+/**
+ * [setGroupChatTitle 	sets the title To: line of a group chat. This has to be set differently because groupchat titles can have any UTF8 char
+ * 						which for some reason gets mangled using the private interfaces and I haven't figured out how to get around that yet]
+ * @param {[type]} groupChatTitle [the partial chat title to set]
+ * @param  {Function} callback      [callback to execute when done setting title]
+ */
+function setGroupChatTitle(groupChatTitle, callback) {
+	applescript.execFile(__dirname+'/setgroupchattitle.AppleScript', [groupChatTitle], function(err) {
+		if (err) {
+			assistiveAccessCheck();
+		}
+
+		callback();
+	});
+}
+
+/**
+ * [sendMessage initiates the applescript to send the imessages]
+ * @param  {[type]} chatMessage [message text to send]
+ * @return {[type]}             [void]
+ */
+function sendMessage(chatMessage, messageCallback) {
+	applescript.execFile(__dirname+'/sendmessage.AppleScript', [chatMessage], function(err) {
+		isSending = false;
+
+		if (err) {
+			assistiveAccessCheck();
+		}
+
+		// pass the applescript error through to the user and let them try to deal with it
+		messageCallback(err);
+
+		// send more messages, if any
+		sendMessagesFromQueue();
+	}.bind(this));
+}
+
+/**
  * [sendMessagesFromQueue checks queue for more messages, attempts to send them if it is not already sending]
  * @return {[type]} [void]
  */
@@ -48,15 +103,12 @@ function sendMessagesFromQueue() {
 	var chatMessage = message.chatMessage;
 	var messageCallback = message.messageCallback;
 
-	var remainingTitleText = "";	// this will hold the text after the first space, if any
-									// required because the private messages frameworks can't handle spaces for some reason
-
 	// use applescript to set the second portion of the chat title, if any
 	if (chatTitle.indexOf(' ') > -1) {
 		// typo is intentional in my code. error is in apple's headers
 		messageHelper("startNewConverstaionInMessages");
 
-		setGroupChatTitle(chatTitle, function() { sendMessage(chatMessage, messageCallback) }.bind(this));
+		setGroupChatTitle(chatTitle, function() { sendMessage(chatMessage, messageCallback); }.bind(this));
 	} else {
 		// create a new chat, at least with the first portion of the chat title
 		buddyHelper("openConversationWithBuddyID", $(chatTitle), "serviceName", $("iMessage"));
@@ -64,61 +116,6 @@ function sendMessagesFromQueue() {
 		sendMessage(chatMessage, messageCallback);
 	}
 }
-
-/**
- * [setGroupChatTitle 	sets the title To: line of a group chat. This has to be set differently because groupchat titles can have any UTF8 char
- * 						which for some reason gets mangled using the private interfaces and I haven't figured out how to get around that yet]
- * @param {[type]} groupChatTitle [the partial chat title to set]
- * @param  {Function} callback      [callback to execute when done setting title]
- */
-function setGroupChatTitle(groupChatTitle, callback) {
-	applescript.execFile(__dirname+'/setgroupchattitle.AppleScript', [groupChatTitle], function(err, result) {
-		if (err) {
-			assistiveAccessCheck();
-		}
-
-		callback();
-	});
-}
-
-/**
- * [sendMessage initiates the applescript to send the imessages]
- * @param  {[type]} chatMessage [message text to send]
- * @return {[type]}             [void]
- */
-function sendMessage(chatMessage, messageCallback) {
-	applescript.execFile(__dirname+'/sendmessage.AppleScript', [chatMessage], function(err, result) {
-		isSending = false;
-
-		if (err) {
-			assistiveAccessCheck();
-		}
-
-		// pass the applescript error through to the user and let them try to deal with it
-		messageCallback(err);
-
-		// send more messages, if any
-		sendMessagesFromQueue();
-	}.bind(this));
-}
-
-/**
- * [assistiveAccessCheck make sure assistive access is set up]
- * @return {[type]} [void]
- */
-function assistiveAccessCheck() {
-	// first check if assistive access is turned on
-	applescript.execFile(__dirname+'/assistive.AppleScript', [true], function(err, result) {
-		if (err) {
-			try {
-				applescript.execFile(__dirname+'/assistive.AppleScript', [false], function(err, result) {});
-			} catch (error) {
-				// I believe this might happen with old versions of OS X
-				console.log('if you are seeing this text, please file an issue at https://github.com/CamHenlin/iMessageModule/issues including your OS X version number and any problems you are encountering.')
-			}
-		}
-	});
-};
 
 /**
  * [sendMessage main module export]
