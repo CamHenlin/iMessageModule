@@ -1,12 +1,12 @@
 // local includes
-var applescript = require("./applescript/lib/applescript.js");
-var Queue = require("./queue.js").Queue;
+var applescript = require('./applescript/lib/applescript.js');
+var Queue = require('./queue.js').Queue;
 
 // nodobjc required includes for private frameworks
-var $ = require('NodObjC');
-$.import('MessagesKit');
-var messageHelper = $.SOMessageHelper('alloc')('init');
-var buddyHelper = $.SOBuddyHelper('alloc')('init');
+var objc = require('NodObjC');
+objc.import('MessagesKit');
+var messageHelper = objc.SOMessageHelper('alloc')('init');
+var buddyHelper = objc.SOBuddyHelper('alloc')('init');
 
 // sending queue, since we can only send one message at a time
 var sendingQueue = [];
@@ -106,12 +106,12 @@ function sendMessagesFromQueue() {
 	// use applescript to set the second portion of the chat title, if any
 	if (chatTitle.indexOf(' ') > -1) {
 		// typo is intentional in my code. error is in apple's headers
-		messageHelper("startNewConverstaionInMessages");
+		messageHelper('startNewConverstaionInMessages');
 
 		setGroupChatTitle(chatTitle, function() { sendMessage(chatMessage, messageCallback); }.bind(this));
 	} else {
 		// create a new chat, at least with the first portion of the chat title
-		buddyHelper("openConversationWithBuddyID", $(chatTitle), "serviceName", $("iMessage"));
+		buddyHelper('openConversationWithBuddyID', $(chatTitle), 'serviceName', $('iMessage'));
 
 		sendMessage(chatMessage, messageCallback);
 	}
