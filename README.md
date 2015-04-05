@@ -12,7 +12,7 @@ var imessagemodule = require("iMessageModule");
 imessagemodule.sendMessage("recipient email, phone, or chat title", "message text", function(err) {});
 ```
 
-It's really that simple!
+It's really that simple! And you can send the messages as quickly as you like. iMessageModule will queue up them and send them as quickly as Messages.app will allow.
 
 ### What's the purpose?
 Nothing else on npm seems to deal with group chats correctly. I wanted something to use in my own project that I believed worked reliably and as quickly as possible. This uses a combination of private OS X frameworks in MessagesKit that I figured out while working on [nodeprivatemessageskit](https://github.com/CamHenlin/nodeprivatemessageskit) and AppleScript files to send messages. Should work with OS X 10.7 or better.
