@@ -3,7 +3,7 @@ var applescript = require('./applescript/lib/applescript.js');
 var Queue = require('./queue.js').Queue;
 
 // nodobjc required includes for private frameworks
-var objc = require('NodObjC');
+var objc = require('nodobjc');
 objc.import('MessagesKit');
 var messageHelper = objc.SOMessageHelper('alloc')('init');
 var buddyHelper = objc.SOBuddyHelper('alloc')('init');
@@ -111,7 +111,7 @@ function sendMessagesFromQueue() {
 		setGroupChatTitle(chatTitle, function() { sendMessage(chatMessage, messageCallback); }.bind(this));
 	} else {
 		// create a new chat, at least with the first portion of the chat title
-		buddyHelper('openConversationWithBuddyID', $(chatTitle), 'serviceName', $('iMessage'));
+		buddyHelper('openConversationWithBuddyID', objc(chatTitle), 'serviceName', objc('iMessage'));
 
 		sendMessage(chatMessage, messageCallback);
 	}
