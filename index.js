@@ -103,21 +103,21 @@ function sendMessagesFromQueue() {
 	var chatMessage = message.chatMessage;
 	var messageCallback = message.messageCallback;
 
-	use applescript to set the second portion of the chat title, if any
-	if (chatTitle.indexOf(' ') > -1) {
+	// use applescript to set the second portion of the chat title, if any
+	// if (chatTitle.indexOf(' ') > -1) {
 		// typo is intentional in my code. error is in apple's headers
 		messageHelper('startNewConverstaionInMessages');
 
 		setGroupChatTitle(chatTitle, function() { sendMessage(chatMessage, messageCallback); }.bind(this));
-	} else {
+	// } else {
 		// create a new chat, at least with the first portion of the chat title
-		messageHelper('startNewConverstaionInMessages');
+	// 	messageHelper('startNewConverstaionInMessages');
 
-		setTimeout(function() {
-			buddyHelper('openConversationWithBuddyID', objc(chatTitle), 'serviceName', objc('iMessage'));
-			sendMessage(chatMessage, messageCallback);
-		}.bind(this), 50)
-	}
+	// 	setTimeout(function() {
+	// 		buddyHelper('openConversationWithBuddyID', objc(chatTitle), 'serviceName', objc('iMessage'));
+	// 		sendMessage(chatMessage, messageCallback);
+	// 	}.bind(this), 50)
+	// }
 }
 
 /**
