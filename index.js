@@ -12,7 +12,7 @@ var messageQueue = new Queue();
 
 const _automatorSendMessageToChat = (chatTitle, chatMessage, callback) => {
 
-	return shell.exec(`automator -v -i "${chatTitle}\n${chatMessage.replace(/(?:\\[rn]|[\r\n]+)+/g, '\r')}" ${__dirname}/automations/Messages-sendMessage.workflow`, {}, callback)
+	return shell.exec(`automator -i "${chatTitle}\n${chatMessage.replace(/(?:\\[rn]|[\r\n]+)+/g, '\r')}" ${__dirname}/automations/Messages-sendMessage.workflow`, {}, callback)
 }
 
 // basic message model
