@@ -19,7 +19,7 @@ var isSending = false
 // instantiate a queue to store messages in
 var messageQueue = new Queue()
 
-const debugging = true
+const debugging = false
 
 const log = (message) => {
 
