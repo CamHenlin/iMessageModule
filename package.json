@@ -23,6 +23,8 @@
   },
   "homepage": "https://github.com/CamHenlin/iMessageModule",
   "dependencies": {
-    "shelljs": "^0.8.3"
+    "queue-fifo": "^0.2.6",
+    "shelljs": "^0.8.3",
+    "sqlite3": "^4.1.1"
   }
 }
